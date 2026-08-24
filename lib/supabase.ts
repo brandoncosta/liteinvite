@@ -3,11 +3,30 @@ import { createClient } from '@supabase/supabase-js';
 // Server-side client only — uses the service role key so RLS's wide-open
 // policies never get hit directly from the browser. All access goes
 // through our API routes, which check the view/edit token themselves.
+//
+// The `global.fetch` override is the important part: Next.js patches the
+// global `fetch` function to cache responses (its "Data Cache") unless a
+// call explicitly opts out, and that patch applies everywhere — page
+// Server Components AND API route handlers alike — not just the ones
+// marked `export const dynamic = 'force-dynamic'`. Supabase's client
+// calls this same global `fetch` under the hood for every query, so
+// without this override, a page or route that forgets that per-file
+// opt-out (easy to lose track of, especially across manual file uploads)
+// can silently keep serving a stale snapshot from whenever it first ran —
+// exactly what caused guests/RSVPs to "not show up" after being added.
+// Passing `cache: 'no-store'` here forces every single Supabase call,
+// everywhere in the app, to always hit the database fresh — this one
+// change matters more than any number of per-page dynamic exports.
 export function supabaseServer() {
   return createClient(
     process.env.SUPABASE_URL!,
     process.env.SUPABASE_SERVICE_ROLE_KEY!,
-    { auth: { persistSession: false } }
+    {
+      auth: { persistSession: false },
+      global: {
+        fetch: (input, init) => fetch(input, { ...init, cache: 'no-store' }),
+      },
+    }
   );
 }
 
