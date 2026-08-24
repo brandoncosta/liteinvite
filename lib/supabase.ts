@@ -11,26 +11,37 @@ export function supabaseServer() {
   );
 }
 
-export type Theme = 'teal' | 'coral' | 'purple' | 'pink' | 'amber';
-// The card's overall visual style — pulled straight from the moodboard.
-// `layout` (centered/left/accent/photo) is retired in favor of this — it
-// stays in the DB for old rows but the app no longer reads or writes it.
+// Eight accent colors pulled straight from the moodboard photos (the sage
+// and coral papers, the lavender wedding suite, the mustard RSVP card, the
+// bold red suite) plus two we felt were missing from the set: a true
+// saturated red and a near-black "ink" neutral for a more sophisticated
+// card. Renamed from the old teal/coral/purple/pink/amber set as part of
+// the ground-up redesign — existing rows with an old theme value just fall
+// back to `sage` in the card component rather than erroring.
+export type Theme = 'sage' | 'coral' | 'lavender' | 'blush' | 'mustard' | 'red' | 'olive' | 'ink';
+// The card's overall visual style. Ten templates built from scratch to sit
+// much closer to the moodboard than the original set — several are
+// name-forward (partner1/partner2) rather than title-forward. Old rows
+// carrying a retired template name (editorial/poster/linework/stacked/
+// photo/arch/ticket/script/bubble/scatter/letterpress from the previous
+// version) fall back to `editorial` in the card component.
 export type Template =
-  | 'editorial'  // quiet serif type, one thin rule
-  | 'poster'     // bold saturated color block, big headline
-  | 'linework'   // italic serif, hand-drawn squiggle divider
-  | 'stacked'    // big mirrored type — good for thank-yous
-  | 'photo'      // photo up top, caption below
-  | 'arch'       // headline curved along an arc
-  | 'ticket'     // bordered ticket/badge with a pill detail
-  | 'script'     // cursive headline on a saturated color
-  | 'bubble'     // chunky rounded caps on a saturated color
-  | 'scatter'    // jumbled, playfully rotated letters
-  | 'letterpress'; // debossed, tone-on-tone type on pastel paper
+  | 'editorial'      // quiet serif type, one thin rule
+  | 'poster'         // bold saturated color block, huge condensed headline
+  | 'letterpress-arch' // tone-on-tone deboss, eyebrow curved above the headline
+  | 'names-grid'     // "THE WEDDING OF / PAUL + JARED" — big names, compact detail block
+  | 'bubble-doodle'  // chunky rounded caps + hand-drawn flower doodles
+  | 'cursive-announce' // small tracked eyebrow, big cursive script headline on cream
+  | 'bold-marker'    // saturated color, thick uneven marker-pen lettering
+  | 'ticket'         // bordered ticket/badge with a pill detail
+  | 'scatter'        // jumbled, playfully rotated letters
+  | 'photo';         // photo up top, caption below
 // What the card is for — drives the fixed headline every template shows
 // ("You're Invited" / "Save the Date" / "Thank You!"), so the host is
-// picking a preset rather than composing card copy themselves.
-export type Purpose = 'invite' | 'save-the-date' | 'thank-you';
+// picking a preset rather than composing card copy themselves. `custom`
+// lets the host type their own headline for anything that doesn't fit
+// those three (a shower, a retirement party, "It's a Girl!", etc).
+export type Purpose = 'invite' | 'save-the-date' | 'thank-you' | 'custom';
 export type Layout = 'centered' | 'left' | 'accent' | 'photo';
 export type RsvpStatus = 'yes' | 'no' | 'maybe';
 
@@ -39,14 +50,21 @@ export interface EventRecord {
   title: string;
   description: string | null;
   location: string | null;
-  // Optional precise address/coordinates for directions, separate from the
-  // free-text `location` guests see displayed on the card.
+  // Optional precise address/coordinates for directions/the embedded map,
+  // separate from the free-text `location` guests see displayed on the card.
   map_query: string | null;
   host_email: string | null;
   event_date: string;
   theme: Theme;
   template: Template;
   purpose: Purpose;
+  // The host's own headline text, used only when purpose === 'custom'.
+  custom_headline: string | null;
+  // Optional name-forward fields — fills in name-driven templates like
+  // "names-grid" and "bubble-doodle" (the "PAUL + JARED" / "STEVIE JONES
+  // & HAYDEN SMITH" look) instead of the generic event title.
+  partner1: string | null;
+  partner2: string | null;
   photo_url: string | null;
   // Toggle for the built-in paper-grain texture (a fixed image the app
   // ships with, not a per-event URL) blended over the card via CSS

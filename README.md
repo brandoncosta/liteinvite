@@ -36,7 +36,27 @@ and don't share it.
      own the domain, verify it under Resend → Domains and set `EMAIL_FROM`.
      Until then, Resend's test sender works for your own inbox only.
 
-3. **Install and run**
+3. **Google Maps (optional)** — for a real embedded, interactive map on
+   the invite page (instead of just a link that opens Google Maps
+   separately):
+   - Go to the [Google Cloud Console](https://console.cloud.google.com/),
+     create a project (or use an existing one), and enable the **Maps
+     Embed API** under "APIs & Services".
+   - Google requires a billing account on file to create an API key, even
+     though the Embed API itself is free — Google's standing $200/month
+     credit comfortably covers a personal invite site's usage, so in
+     practice this shouldn't cost anything, but it does mean linking a
+     card.
+   - Under "Credentials," create an API key. Restrict it (Application
+     restrictions → HTTP referrers) to your site's domain so it can't be
+     used elsewhere if it leaks.
+   - Set `NEXT_PUBLIC_GOOGLE_MAPS_EMBED_KEY` to that key in `.env.local`
+     (and in Vercel's environment variables for the deployed site).
+   - Leave it unset and the app falls back to a plain "Get directions"
+     link that opens Google Maps in a new tab — no key, no billing account,
+     works today. Nothing else about the app depends on this.
+
+4. **Install and run**
    ```
    cp .env.local.example .env.local   # fill in the values above
    npm install
@@ -66,8 +86,8 @@ schema.sql                        — the whole data model, 3 tables
 lib/supabase.ts                   — server client + shared types
 lib/email.ts                      — shared HTML email template
 lib/csv.ts                        — CSV parsing + header guessing for guest import
-lib/maps.ts                       — Google Maps link builder (no API key needed)
-components/InviteCard.tsx         — the 4-layout x 5-theme card system
+lib/maps.ts                       — Google Maps embed src + directions link builder
+components/InviteCard.tsx         — the 10-template x 8-theme x 4-purpose card system
 components/CopyLink.tsx           — link chip + copy button
 app/page.tsx                      — create event
 app/e/[token]/                    — public RSVP page (personalizes via ?g=<invite_token>)

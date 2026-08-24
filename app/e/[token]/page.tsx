@@ -2,7 +2,7 @@ import { supabaseServer } from '@/lib/supabase';
 import { notFound } from 'next/navigation';
 import InviteCard from '@/components/InviteCard';
 import RsvpForm from './RsvpForm';
-import { directionsUrl } from '@/lib/maps';
+import { directionsUrl, embedMapSrc } from '@/lib/maps';
 
 // See the matching comment in app/dashboard/[editToken]/page.tsx — without
 // this, Next.js can cache the Supabase fetch and keep serving a stale
@@ -56,18 +56,35 @@ export default async function EventPage({
         purpose={event.purpose}
         title={event.title}
         subtitle={dateLabel}
+        customHeadline={event.custom_headline}
+        partner1={event.partner1}
+        partner2={event.partner2}
         photoUrl={event.photo_url}
         paperTexture={event.paper_texture}
       />
 
       {event.description && <p style={{ marginTop: 20 }}>{event.description}</p>}
       {event.location && (
-        <p className="muted" style={{ marginTop: -8 }}>
-          {event.location}{' '}
-          <a href={directionsUrl(event.location, event.map_query)} target="_blank" rel="noopener noreferrer">
-            Get directions →
-          </a>
-        </p>
+        <>
+          <p className="muted" style={{ marginTop: -8 }}>
+            {event.location}{' '}
+            <a href={directionsUrl(event.location, event.map_query)} target="_blank" rel="noopener noreferrer">
+              Get directions →
+            </a>
+          </p>
+          {embedMapSrc(event.location, event.map_query) && (
+            <div style={{ marginTop: 12, borderRadius: 8, overflow: 'hidden', border: '1px solid var(--border)' }}>
+              <iframe
+                src={embedMapSrc(event.location, event.map_query)!}
+                width="100%"
+                height="220"
+                style={{ border: 0, display: 'block' }}
+                loading="lazy"
+                referrerPolicy="no-referrer-when-downgrade"
+              />
+            </div>
+          )}
+        </>
       )}
 
       <div style={{ marginTop: 28 }}>

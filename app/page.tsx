@@ -5,32 +5,36 @@ import { useRouter } from 'next/navigation';
 import InviteCard from '@/components/InviteCard';
 import { Purpose, Template, Theme } from '@/lib/supabase';
 
-const THEMES: Theme[] = ['teal', 'coral', 'purple', 'pink', 'amber'];
+const THEMES: Theme[] = ['sage', 'coral', 'lavender', 'blush', 'mustard', 'red', 'olive', 'ink'];
 const THEME_SWATCH: Record<Theme, string> = {
-  teal: '#5DCAA5',
-  coral: '#F0997B',
-  purple: '#AFA9EC',
-  pink: '#ED93B1',
-  amber: '#EF9F27',
+  sage: '#8FAE55',
+  coral: '#EE8F68',
+  lavender: '#A79BE8',
+  blush: '#EC8FAE',
+  mustard: '#E8B23A',
+  red: '#E6432E',
+  olive: '#A6B84A',
+  ink: '#211D14',
 };
 const PURPOSES: { value: Purpose; label: string; hint: string }[] = [
   { value: 'invite', label: "You're Invited", hint: 'Your event title is the headline' },
   { value: 'save-the-date', label: 'Save the Date', hint: 'Fixed headline — your details become a caption' },
   { value: 'thank-you', label: 'Thank You!', hint: 'Fixed headline — your details become a caption' },
+  { value: 'custom', label: 'Custom', hint: 'Type your own headline' },
 ];
 const TEMPLATES: { value: Template; label: string; hint: string }[] = [
   { value: 'editorial', label: 'Editorial', hint: 'Quiet serif type, one thin rule' },
-  { value: 'poster', label: 'Poster', hint: 'Bold, saturated, big headline' },
-  { value: 'linework', label: 'Line-art', hint: 'Italic serif, hand-drawn squiggle' },
-  { value: 'stacked', label: 'Stacked type', hint: 'Big mirrored type — great for thank-yous' },
-  { value: 'photo', label: 'Photo', hint: 'Photo up top, caption below' },
-  { value: 'arch', label: 'Arch', hint: 'Headline curved along an arc' },
+  { value: 'poster', label: 'Poster', hint: 'Bold, saturated, huge headline' },
+  { value: 'letterpress-arch', label: 'Letterpress Arch', hint: 'Tone-on-tone deboss, arced eyebrow' },
+  { value: 'names-grid', label: 'Names', hint: 'Big names side by side — add both names below' },
+  { value: 'bubble-doodle', label: 'Bubble Doodle', hint: 'Chunky rounded caps + flower doodles' },
+  { value: 'cursive-announce', label: 'Cursive', hint: 'Big cursive script on cream' },
+  { value: 'bold-marker', label: 'Bold Marker', hint: 'Thick hand-marker lettering' },
   { value: 'ticket', label: 'Ticket', hint: 'Bordered badge with a pill detail' },
-  { value: 'script', label: 'Script', hint: 'Cursive headline on solid color' },
-  { value: 'bubble', label: 'Bubble', hint: 'Chunky rounded caps on solid color' },
   { value: 'scatter', label: 'Scatter', hint: 'Jumbled, playfully rotated letters' },
-  { value: 'letterpress', label: 'Letterpress', hint: 'Debossed tone-on-tone type' },
+  { value: 'photo', label: 'Photo', hint: 'Photo up top, caption below' },
 ];
+const NAME_TEMPLATES: Template[] = ['names-grid', 'bubble-doodle', 'bold-marker'];
 
 export default function CreateEventPage() {
   const router = useRouter();
@@ -40,9 +44,12 @@ export default function CreateEventPage() {
   const [mapQuery, setMapQuery] = useState('');
   const [hostEmail, setHostEmail] = useState('');
   const [eventDate, setEventDate] = useState('');
-  const [theme, setTheme] = useState<Theme>('teal');
+  const [theme, setTheme] = useState<Theme>('sage');
   const [template, setTemplate] = useState<Template>('editorial');
   const [purpose, setPurpose] = useState<Purpose>('invite');
+  const [customHeadline, setCustomHeadline] = useState('');
+  const [partner1, setPartner1] = useState('');
+  const [partner2, setPartner2] = useState('');
   const [photoUrl, setPhotoUrl] = useState('');
   const [paperTexture, setPaperTexture] = useState(false);
   const [loading, setLoading] = useState(false);
@@ -69,6 +76,9 @@ export default function CreateEventPage() {
         theme,
         template,
         purpose,
+        custom_headline: purpose === 'custom' ? customHeadline : null,
+        partner1,
+        partner2,
         photo_url: template === 'photo' ? photoUrl : null,
         paper_texture: paperTexture,
       }),
@@ -106,15 +116,15 @@ export default function CreateEventPage() {
         </div>
 
         <div className="field-group">
-          <label>Exact address or pin for directions</label>
+          <label>Exact address or pin for the map</label>
           <input
             placeholder="Optional — only needed if the location above is informal"
             value={mapQuery}
             onChange={(e) => setMapQuery(e.target.value)}
           />
           <p className="muted" style={{ margin: '4px 0 0', fontSize: 12 }}>
-            The "Get directions" link uses this if you fill it in, otherwise it uses the location above. For a
-            precise pin, open Google Maps, find the spot, and paste the address or coordinates it shows.
+            The embedded map and "Get directions" link use this if you fill it in, otherwise they use the location
+            above. For a precise pin, open Google Maps, find the spot, and paste the address or coordinates it shows.
           </p>
         </div>
 
@@ -135,7 +145,7 @@ export default function CreateEventPage() {
 
         <div className="field-group">
           <label>Color</label>
-          <div style={{ display: 'flex', gap: 8 }}>
+          <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
             {THEMES.map((t) => (
               <button
                 type="button"
@@ -157,7 +167,7 @@ export default function CreateEventPage() {
 
         <div className="field-group">
           <label>Purpose</label>
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 8 }}>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: 8 }}>
             {PURPOSES.map((p) => (
               <button
                 type="button"
@@ -172,6 +182,20 @@ export default function CreateEventPage() {
             ))}
           </div>
         </div>
+
+        {purpose === 'custom' && (
+          <div className="field-group">
+            <label>Headline text</label>
+            <input
+              placeholder="e.g. It's a Girl! / Happy Retirement! / Congrats, Grad!"
+              value={customHeadline}
+              onChange={(e) => setCustomHeadline(e.target.value)}
+            />
+            <p className="muted" style={{ margin: '4px 0 0', fontSize: 12 }}>
+              This is what shows big on the card. Your title and location above become the smaller detail line.
+            </p>
+          </div>
+        )}
 
         <div className="field-group">
           <label>Card style</label>
@@ -190,6 +214,20 @@ export default function CreateEventPage() {
             ))}
           </div>
         </div>
+
+        {NAME_TEMPLATES.includes(template) && (
+          <div className="field-group">
+            <label>Names (optional)</label>
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8 }}>
+              <input placeholder="Person 1" value={partner1} onChange={(e) => setPartner1(e.target.value)} />
+              <input placeholder="Person 2" value={partner2} onChange={(e) => setPartner2(e.target.value)} />
+            </div>
+            <p className="muted" style={{ margin: '4px 0 0', fontSize: 12 }}>
+              Fill in both for the name-forward look this style is built for (weddings, engagements, anniversaries).
+              Leave blank to just use your event title instead.
+            </p>
+          </div>
+        )}
 
         {template === 'photo' && (
           <div className="field-group">
@@ -221,6 +259,9 @@ export default function CreateEventPage() {
             purpose={purpose}
             title={title || 'Your event title'}
             subtitle={location}
+            customHeadline={customHeadline}
+            partner1={partner1}
+            partner2={partner2}
             photoUrl={photoUrl}
             paperTexture={paperTexture}
           />

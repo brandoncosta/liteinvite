@@ -7,7 +7,22 @@ const resend = new Resend(process.env.RESEND_API_KEY);
 
 export async function POST(req: NextRequest) {
   const body = await req.json();
-  const { title, description, location, map_query, host_email, event_date, theme, template, purpose, photo_url, paper_texture } = body;
+  const {
+    title,
+    description,
+    location,
+    map_query,
+    host_email,
+    event_date,
+    theme,
+    template,
+    purpose,
+    custom_headline,
+    partner1,
+    partner2,
+    photo_url,
+    paper_texture,
+  } = body;
 
   if (!title || !event_date) {
     return NextResponse.json({ error: 'Title and date are required' }, { status: 400 });
@@ -23,9 +38,12 @@ export async function POST(req: NextRequest) {
       map_query: map_query || null,
       host_email: host_email || null,
       event_date,
-      theme: theme || 'teal',
+      theme: theme || 'sage',
       template: template || 'editorial',
       purpose: purpose || 'invite',
+      custom_headline: custom_headline || null,
+      partner1: partner1 || null,
+      partner2: partner2 || null,
       photo_url: photo_url || null,
       paper_texture: Boolean(paper_texture),
     })
