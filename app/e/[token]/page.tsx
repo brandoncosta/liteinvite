@@ -2,7 +2,12 @@ import { supabaseServer } from '@/lib/supabase';
 import { notFound } from 'next/navigation';
 import InviteCard from '@/components/InviteCard';
 import RsvpForm from './RsvpForm';
-import { googleMapsUrl } from '@/lib/maps';
+import { directionsUrl } from '@/lib/maps';
+
+// See the matching comment in app/dashboard/[editToken]/page.tsx — without
+// this, Next.js can cache the Supabase fetch and keep serving a stale
+// version of the event/guest data on this page too.
+export const dynamic = 'force-dynamic';
 
 export default async function EventPage({
   params,
@@ -48,6 +53,7 @@ export default async function EventPage({
       <InviteCard
         theme={event.theme}
         template={event.template}
+        purpose={event.purpose}
         title={event.title}
         subtitle={dateLabel}
         photoUrl={event.photo_url}
@@ -58,8 +64,8 @@ export default async function EventPage({
       {event.location && (
         <p className="muted" style={{ marginTop: -8 }}>
           {event.location}{' '}
-          <a href={googleMapsUrl(event.location)} target="_blank" rel="noopener noreferrer">
-            View on Google Maps →
+          <a href={directionsUrl(event.location, event.map_query)} target="_blank" rel="noopener noreferrer">
+            Get directions →
           </a>
         </p>
       )}

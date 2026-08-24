@@ -27,6 +27,10 @@ export type Template =
   | 'bubble'     // chunky rounded caps on a saturated color
   | 'scatter'    // jumbled, playfully rotated letters
   | 'letterpress'; // debossed, tone-on-tone type on pastel paper
+// What the card is for — drives the fixed headline every template shows
+// ("You're Invited" / "Save the Date" / "Thank You!"), so the host is
+// picking a preset rather than composing card copy themselves.
+export type Purpose = 'invite' | 'save-the-date' | 'thank-you';
 export type Layout = 'centered' | 'left' | 'accent' | 'photo';
 export type RsvpStatus = 'yes' | 'no' | 'maybe';
 
@@ -35,10 +39,14 @@ export interface EventRecord {
   title: string;
   description: string | null;
   location: string | null;
+  // Optional precise address/coordinates for directions, separate from the
+  // free-text `location` guests see displayed on the card.
+  map_query: string | null;
   host_email: string | null;
   event_date: string;
   theme: Theme;
   template: Template;
+  purpose: Purpose;
   photo_url: string | null;
   // Toggle for the built-in paper-grain texture (a fixed image the app
   // ships with, not a per-event URL) blended over the card via CSS

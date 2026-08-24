@@ -3,7 +3,7 @@
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import InviteCard from '@/components/InviteCard';
-import { Template, Theme } from '@/lib/supabase';
+import { Purpose, Template, Theme } from '@/lib/supabase';
 
 const THEMES: Theme[] = ['teal', 'coral', 'purple', 'pink', 'amber'];
 const THEME_SWATCH: Record<Theme, string> = {
@@ -13,6 +13,11 @@ const THEME_SWATCH: Record<Theme, string> = {
   pink: '#ED93B1',
   amber: '#EF9F27',
 };
+const PURPOSES: { value: Purpose; label: string; hint: string }[] = [
+  { value: 'invite', label: "You're Invited", hint: 'Your event title is the headline' },
+  { value: 'save-the-date', label: 'Save the Date', hint: 'Fixed headline — your details become a caption' },
+  { value: 'thank-you', label: 'Thank You!', hint: 'Fixed headline — your details become a caption' },
+];
 const TEMPLATES: { value: Template; label: string; hint: string }[] = [
   { value: 'editorial', label: 'Editorial', hint: 'Quiet serif type, one thin rule' },
   { value: 'poster', label: 'Poster', hint: 'Bold, saturated, big headline' },
@@ -32,10 +37,12 @@ export default function CreateEventPage() {
   const [title, setTitle] = useState('');
   const [description, setDescription] = useState('');
   const [location, setLocation] = useState('');
+  const [mapQuery, setMapQuery] = useState('');
   const [hostEmail, setHostEmail] = useState('');
   const [eventDate, setEventDate] = useState('');
   const [theme, setTheme] = useState<Theme>('teal');
   const [template, setTemplate] = useState<Template>('editorial');
+  const [purpose, setPurpose] = useState<Purpose>('invite');
   const [photoUrl, setPhotoUrl] = useState('');
   const [paperTexture, setPaperTexture] = useState(false);
   const [loading, setLoading] = useState(false);
@@ -56,10 +63,12 @@ export default function CreateEventPage() {
         title,
         description,
         location,
+        map_query: mapQuery,
         host_email: hostEmail,
         event_date: eventDate,
         theme,
         template,
+        purpose,
         photo_url: template === 'photo' ? photoUrl : null,
         paper_texture: paperTexture,
       }),
@@ -97,6 +106,19 @@ export default function CreateEventPage() {
         </div>
 
         <div className="field-group">
+          <label>Exact address or pin for directions</label>
+          <input
+            placeholder="Optional — only needed if the location above is informal"
+            value={mapQuery}
+            onChange={(e) => setMapQuery(e.target.value)}
+          />
+          <p className="muted" style={{ margin: '4px 0 0', fontSize: 12 }}>
+            The "Get directions" link uses this if you fill it in, otherwise it uses the location above. For a
+            precise pin, open Google Maps, find the spot, and paste the address or coordinates it shows.
+          </p>
+        </div>
+
+        <div className="field-group">
           <label>Your email</label>
           <input
             type="email"
@@ -129,6 +151,24 @@ export default function CreateEventPage() {
                   border: theme === t ? '2px solid #1C1C1A' : '1px solid var(--border)',
                 }}
               />
+            ))}
+          </div>
+        </div>
+
+        <div className="field-group">
+          <label>Purpose</label>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 8 }}>
+            {PURPOSES.map((p) => (
+              <button
+                type="button"
+                key={p.value}
+                onClick={() => setPurpose(p.value)}
+                className={purpose === p.value ? 'btn-active' : ''}
+                style={{ textAlign: 'left', padding: '10px 12px' }}
+              >
+                <div style={{ fontSize: 13, fontWeight: 600 }}>{p.label}</div>
+                <div className="muted" style={{ fontSize: 11, marginTop: 2 }}>{p.hint}</div>
+              </button>
             ))}
           </div>
         </div>
@@ -178,6 +218,7 @@ export default function CreateEventPage() {
           <InviteCard
             theme={theme}
             template={template}
+            purpose={purpose}
             title={title || 'Your event title'}
             subtitle={location}
             photoUrl={photoUrl}

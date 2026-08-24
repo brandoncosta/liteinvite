@@ -1,4 +1,4 @@
-import { Template, Theme } from '@/lib/supabase';
+import { Purpose, Template, Theme } from '@/lib/supabase';
 
 // Muted accent used sparingly on the quieter templates — a rule, a dot, a
 // squiggle — never a full-bleed color block.
@@ -53,46 +53,73 @@ const shell: React.CSSProperties = {
 interface Props {
   theme: Theme;
   template: Template;
+  // What the card is for. This drives a fixed headline every template
+  // renders the same way — "You're Invited" / "Save the Date" /
+  // "Thank You!" — straight out of the moodboard, so the host isn't
+  // designing anything: they pick a purpose and a style, and their own
+  // title/subtitle become the supporting detail line around it instead
+  // of something they have to compose themselves.
+  purpose: Purpose;
   title: string;
   subtitle?: string;
   photoUrl?: string | null;
   paperTexture?: boolean;
 }
 
-// The card "design system": eleven templates pulled from the moodboard,
-// each crossed with five accent colors. No per-card design work, no
-// illustration library — every template is built from type, rules, and
-// simple shapes/SVG. An optional fixed paper-grain texture can be toggled
-// on over any of them (see TextureOverlay below).
-export default function InviteCard({ theme, template, title, subtitle, photoUrl, paperTexture }: Props) {
-  switch (template) {
-    case 'poster':
-      return <Poster theme={theme} title={title} subtitle={subtitle} paperTexture={paperTexture} />;
-    case 'linework':
-      return <Linework theme={theme} title={title} subtitle={subtitle} paperTexture={paperTexture} />;
-    case 'stacked':
-      return <Stacked theme={theme} title={title} subtitle={subtitle} paperTexture={paperTexture} />;
-    case 'photo':
-      return <PhotoLed theme={theme} title={title} subtitle={subtitle} photoUrl={photoUrl} paperTexture={paperTexture} />;
-    case 'arch':
-      return <Arch theme={theme} title={title} subtitle={subtitle} paperTexture={paperTexture} />;
-    case 'ticket':
-      return <Ticket theme={theme} title={title} subtitle={subtitle} paperTexture={paperTexture} />;
-    case 'script':
-      return <Script theme={theme} title={title} subtitle={subtitle} paperTexture={paperTexture} />;
-    case 'bubble':
-      return <Bubble theme={theme} title={title} subtitle={subtitle} paperTexture={paperTexture} />;
-    case 'scatter':
-      return <Scatter theme={theme} title={title} subtitle={subtitle} paperTexture={paperTexture} />;
-    case 'letterpress':
-      return <Letterpress theme={theme} title={title} subtitle={subtitle} paperTexture={paperTexture} />;
-    case 'editorial':
+// Turns (purpose, title, subtitle) into what actually gets drawn:
+// eyebrow (small line above the headline), headline (the dominant type),
+// and caption (the detail line below). For "invite" the event's own
+// title stays the star and a fixed eyebrow sits above it — for
+// "save-the-date" and "thank-you" the fixed phrase takes over as the
+// headline instead, matching how those read in the reference cards, and
+// the event's own info becomes the caption underneath.
+function getCopy(purpose: Purpose, title: string, subtitle?: string) {
+  switch (purpose) {
+    case 'save-the-date':
+      return { eyebrow: undefined, headline: 'Save the Date', caption: [title, subtitle].filter(Boolean).join(' · ') || undefined };
+    case 'thank-you':
+      return { eyebrow: undefined, headline: 'Thank You!', caption: [title, subtitle].filter(Boolean).join(' · ') || undefined };
+    case 'invite':
     default:
-      return <Editorial theme={theme} title={title} subtitle={subtitle} paperTexture={paperTexture} />;
+      return { eyebrow: "You're Invited", headline: title, caption: subtitle };
   }
 }
 
-type Sub = { theme: Theme; title: string; subtitle?: string; paperTexture?: boolean };
+// The card "design system": eleven templates pulled from the moodboard,
+// each crossed with five accent colors and three purposes. No per-card
+// design work, no illustration library — every template is built from
+// type, rules, and simple shapes/SVG. An optional fixed paper-grain
+// texture can be toggled on over any of them (see TextureOverlay below).
+export default function InviteCard({ theme, template, purpose, title, subtitle, photoUrl, paperTexture }: Props) {
+  const { eyebrow, headline, caption } = getCopy(purpose, title, subtitle);
+  switch (template) {
+    case 'poster':
+      return <Poster theme={theme} eyebrow={eyebrow} title={headline} subtitle={caption} paperTexture={paperTexture} />;
+    case 'linework':
+      return <Linework theme={theme} eyebrow={eyebrow} title={headline} subtitle={caption} paperTexture={paperTexture} />;
+    case 'stacked':
+      return <Stacked theme={theme} eyebrow={eyebrow} title={headline} subtitle={caption} paperTexture={paperTexture} />;
+    case 'photo':
+      return <PhotoLed theme={theme} eyebrow={eyebrow} title={headline} subtitle={caption} photoUrl={photoUrl} paperTexture={paperTexture} />;
+    case 'arch':
+      return <Arch theme={theme} eyebrow={eyebrow} title={headline} subtitle={caption} paperTexture={paperTexture} />;
+    case 'ticket':
+      return <Ticket theme={theme} eyebrow={eyebrow} title={headline} subtitle={caption} paperTexture={paperTexture} />;
+    case 'script':
+      return <Script theme={theme} eyebrow={eyebrow} title={headline} subtitle={caption} paperTexture={paperTexture} />;
+    case 'bubble':
+      return <Bubble theme={theme} eyebrow={eyebrow} title={headline} subtitle={caption} paperTexture={paperTexture} />;
+    case 'scatter':
+      return <Scatter theme={theme} eyebrow={eyebrow} title={headline} subtitle={caption} paperTexture={paperTexture} />;
+    case 'letterpress':
+      return <Letterpress theme={theme} eyebrow={eyebrow} title={headline} subtitle={caption} paperTexture={paperTexture} />;
+    case 'editorial':
+    default:
+      return <Editorial theme={theme} eyebrow={eyebrow} title={headline} subtitle={caption} paperTexture={paperTexture} />;
+  }
+}
+
+type Sub = { theme: Theme; eyebrow?: string; title: string; subtitle?: string; paperTexture?: boolean };
 
 // The one paper-grain texture the app ships with, used everywhere the
 // toggle is on — not a per-event pasted URL anymore. Swap this constant
@@ -153,11 +180,12 @@ function ArcText({ text, color, id }: { text: string; color: string; id: string 
 }
 
 // Quiet, type-led: cream ground, serif headline, one thin rule.
-function Editorial({ theme, title, subtitle, paperTexture }: Sub) {
+function Editorial({ theme, eyebrow, title, subtitle, paperTexture }: Sub) {
   const accent = ACCENT[theme];
   return (
     <div style={{ ...shell, background: CREAM, color: INK, border: '1px solid rgba(43,40,34,0.1)', display: 'flex', alignItems: 'center', justifyContent: 'center', textAlign: 'center' }}>
       <div style={{ padding: '2.75rem 1.75rem' }}>
+        {eyebrow && <div style={{ fontSize: 12, letterSpacing: '0.08em', textTransform: 'uppercase', color: accent, marginBottom: 10 }}>{eyebrow}</div>}
         <div style={{ fontFamily: SERIF, fontSize: 26, fontWeight: 500, letterSpacing: '-0.01em', lineHeight: 1.15 }}>{title}</div>
         <div style={{ width: 36, height: 2, background: accent, margin: '14px auto' }} />
         {subtitle && <div style={{ fontSize: 13, letterSpacing: '0.04em', textTransform: 'uppercase', color: MUTED }}>{subtitle}</div>}
@@ -169,7 +197,7 @@ function Editorial({ theme, title, subtitle, paperTexture }: Sub) {
 
 // Bold and saturated: the theme color takes over the whole card, a big
 // condensed uppercase headline, a rotated corner tag like a price sticker.
-function Poster({ theme, title, subtitle, paperTexture }: Sub) {
+function Poster({ theme, eyebrow, title, subtitle, paperTexture }: Sub) {
   const { bg, ink } = POSTER[theme];
   return (
     <div style={{ ...shell, background: bg, color: ink, display: 'flex', flexDirection: 'column', justifyContent: 'flex-end' }}>
@@ -192,6 +220,11 @@ function Poster({ theme, title, subtitle, paperTexture }: Sub) {
         Invite
       </div>
       <div style={{ padding: '2.5rem 1.75rem 2rem' }}>
+        {eyebrow && (
+          <div style={{ fontFamily: SANS, fontSize: 12, fontWeight: 700, letterSpacing: '0.08em', textTransform: 'uppercase', marginBottom: 8 }}>
+            {eyebrow}
+          </div>
+        )}
         <div
           style={{
             fontFamily: SANS,
@@ -228,11 +261,12 @@ function Poster({ theme, title, subtitle, paperTexture }: Sub) {
 
 // Hand-drawn feel: cream ground, italic serif headline, a thin wavy line
 // instead of a straight rule, a tiny line-art flourish.
-function Linework({ theme, title, subtitle, paperTexture }: Sub) {
+function Linework({ theme, eyebrow, title, subtitle, paperTexture }: Sub) {
   const accent = ACCENT[theme];
   return (
     <div style={{ ...shell, background: CREAM, color: INK, border: '1px solid rgba(43,40,34,0.1)', display: 'flex', alignItems: 'center', justifyContent: 'center', textAlign: 'center' }}>
       <div style={{ padding: '2.5rem 1.75rem' }}>
+        {eyebrow && <div style={{ fontFamily: SERIF, fontStyle: 'italic', fontSize: 13, color: accent, marginBottom: 6 }}>{eyebrow}</div>}
         <svg width="34" height="20" viewBox="0 0 34 20" fill="none" style={{ margin: '0 auto 14px', display: 'block' }}>
           <path
             d="M2 14c3-9 6-9 8.5-2s6 7 8.5-2 6-9 8.5-2 5 9 6.5 4"
@@ -256,7 +290,7 @@ function Linework({ theme, title, subtitle, paperTexture }: Sub) {
 // Big stacked typographic type — the title set twice, the second copy
 // mirrored and faded like a reflection. Reads well for a punchy invite or
 // a "THANK YOU" card, which is exactly what it's for.
-function Stacked({ theme, title, subtitle, paperTexture }: Sub) {
+function Stacked({ theme, eyebrow, title, subtitle, paperTexture }: Sub) {
   const accent = ACCENT[theme];
   const type: React.CSSProperties = {
     fontFamily: SANS,
@@ -269,6 +303,7 @@ function Stacked({ theme, title, subtitle, paperTexture }: Sub) {
   return (
     <div style={{ ...shell, background: CREAM, color: INK, border: '1px solid rgba(43,40,34,0.1)', display: 'flex', alignItems: 'center', justifyContent: 'center', textAlign: 'center' }}>
       <div style={{ padding: '2rem 1.5rem' }}>
+        {eyebrow && <div style={{ fontSize: 12, letterSpacing: '0.08em', textTransform: 'uppercase', color: accent, marginBottom: 10 }}>{eyebrow}</div>}
         <div style={type}>{title}</div>
         <div style={{ width: 28, height: 2, background: accent, margin: '10px auto' }} />
         <div style={{ ...type, opacity: 0.16, transform: 'scaleY(-1)' }}>{title}</div>
@@ -284,7 +319,7 @@ function Stacked({ theme, title, subtitle, paperTexture }: Sub) {
 // Photo-led: an image with a softly waved bottom edge (pure CSS, no mask
 // asset), then a cream caption panel underneath — the layered postcard
 // look from the save-the-date examples.
-function PhotoLed({ theme, title, subtitle, photoUrl, paperTexture }: Sub & { photoUrl?: string | null }) {
+function PhotoLed({ theme, eyebrow, title, subtitle, photoUrl, paperTexture }: Sub & { photoUrl?: string | null }) {
   const accent = ACCENT[theme];
   return (
     <div style={{ ...shell, background: CREAM, color: INK, border: '1px solid rgba(43,40,34,0.1)' }}>
@@ -299,6 +334,7 @@ function PhotoLed({ theme, title, subtitle, photoUrl, paperTexture }: Sub & { ph
         )}
       </div>
       <div style={{ padding: '1.5rem 1.5rem 1.75rem', textAlign: 'center' }}>
+        {eyebrow && <div style={{ fontSize: 11, letterSpacing: '0.08em', textTransform: 'uppercase', color: accent, marginBottom: 6 }}>{eyebrow}</div>}
         <div style={{ fontFamily: SERIF, fontSize: 24, fontWeight: 500, letterSpacing: '-0.01em', lineHeight: 1.15 }}>{title}</div>
         <div style={{ width: 30, height: 2, background: accent, margin: '12px auto' }} />
         {subtitle && <div style={{ fontSize: 12, letterSpacing: '0.04em', textTransform: 'uppercase', color: MUTED }}>{subtitle}</div>}
@@ -310,11 +346,12 @@ function PhotoLed({ theme, title, subtitle, photoUrl, paperTexture }: Sub & { ph
 
 // Headline curved along an arc, cream ground — the "ANDREA AND MARTIN"
 // look. General-purpose: works as well for "SAM'S BIRTHDAY" as a wedding.
-function Arch({ theme, title, subtitle, paperTexture }: Sub) {
+function Arch({ theme, eyebrow, title, subtitle, paperTexture }: Sub) {
   const accent = ACCENT[theme];
   return (
     <div style={{ ...shell, background: CREAM, color: INK, border: '1px solid rgba(43,40,34,0.1)', display: 'flex', alignItems: 'center', justifyContent: 'center', textAlign: 'center' }}>
       <div style={{ padding: '1.75rem 1.5rem 2.25rem' }}>
+        {eyebrow && <div style={{ fontSize: 12, letterSpacing: '0.08em', textTransform: 'uppercase', color: accent, marginBottom: 2 }}>{eyebrow}</div>}
         <ArcText text={title} color={accent} id={stableId(title)} />
         <div style={{ width: 30, height: 2, background: accent, margin: '4px auto 12px' }} />
         {subtitle && <div style={{ fontSize: 12, letterSpacing: '0.04em', textTransform: 'uppercase', color: MUTED }}>{subtitle}</div>}
@@ -326,11 +363,12 @@ function Arch({ theme, title, subtitle, paperTexture }: Sub) {
 
 // Bordered like an event ticket: an inset rule, condensed bold caps
 // headline, subtitle in a pill-shaped outline chip.
-function Ticket({ theme, title, subtitle, paperTexture }: Sub) {
+function Ticket({ theme, eyebrow, title, subtitle, paperTexture }: Sub) {
   const accent = ACCENT[theme];
   return (
     <div style={{ ...shell, background: CREAM, color: INK, border: '1px solid rgba(43,40,34,0.1)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
       <div style={{ margin: '1rem', padding: '2.25rem 1.25rem', border: `1px solid ${accent}`, borderRadius: 8, textAlign: 'center', width: '100%' }}>
+        {eyebrow && <div style={{ fontSize: 12, letterSpacing: '0.08em', textTransform: 'uppercase', color: accent, marginBottom: 10 }}>{eyebrow}</div>}
         <div style={{ fontFamily: DISPLAY, fontSize: 30, letterSpacing: '0.01em', lineHeight: 1.05, textTransform: 'uppercase' }}>{title}</div>
         {subtitle && (
           <div
@@ -357,11 +395,16 @@ function Ticket({ theme, title, subtitle, paperTexture }: Sub) {
 
 // Cursive headline on a full-bleed saturated color — the "Natalie asked
 // and Adriano said yes!" look.
-function Script({ theme, title, subtitle, paperTexture }: Sub) {
+function Script({ theme, eyebrow, title, subtitle, paperTexture }: Sub) {
   const { bg } = POSTER[theme];
   return (
     <div style={{ ...shell, background: bg, color: LIGHT_INK, display: 'flex', alignItems: 'center', justifyContent: 'center', textAlign: 'center' }}>
       <div style={{ padding: '2.5rem 1.75rem' }}>
+        {eyebrow && (
+          <div style={{ fontFamily: SANS, fontSize: 12, fontWeight: 600, letterSpacing: '0.08em', textTransform: 'uppercase', marginBottom: 10 }}>
+            {eyebrow}
+          </div>
+        )}
         <div style={{ fontFamily: SCRIPT, fontSize: 40, lineHeight: 1.1 }}>{title}</div>
         {subtitle && (
           <div style={{ marginTop: 14, fontFamily: SANS, fontSize: 12, fontWeight: 600, letterSpacing: '0.08em', textTransform: 'uppercase' }}>
@@ -376,11 +419,16 @@ function Script({ theme, title, subtitle, paperTexture }: Sub) {
 
 // Chunky rounded "bubble" caps on a saturated color — the "FOR EVER" /
 // "SARAH+ETHAN" look.
-function Bubble({ theme, title, subtitle, paperTexture }: Sub) {
+function Bubble({ theme, eyebrow, title, subtitle, paperTexture }: Sub) {
   const { bg, ink } = POSTER[theme];
   return (
     <div style={{ ...shell, background: bg, color: ink, display: 'flex', alignItems: 'center', justifyContent: 'center', textAlign: 'center' }}>
       <div style={{ padding: '2rem 1.5rem' }}>
+        {eyebrow && (
+          <div style={{ fontFamily: SANS, fontSize: 12, fontWeight: 700, letterSpacing: '0.08em', textTransform: 'uppercase', marginBottom: 8 }}>
+            {eyebrow}
+          </div>
+        )}
         <div style={{ fontFamily: ROUND, fontSize: 34, lineHeight: 0.95, textTransform: 'uppercase' }}>{title}</div>
         {subtitle && (
           <div style={{ marginTop: 12, fontFamily: SCRIPT, fontSize: 18, color: ink }}>{subtitle}</div>
@@ -396,13 +444,18 @@ function Bubble({ theme, title, subtitle, paperTexture }: Sub) {
 // function of each letter's position, never Math.random, so server and
 // client render identically (no hydration mismatch) and every reload
 // looks the same rather than jittering around.
-function Scatter({ theme, title, subtitle, paperTexture }: Sub) {
+function Scatter({ theme, eyebrow, title, subtitle, paperTexture }: Sub) {
   const { bg, ink } = POSTER[theme];
   const words = title.split(' ');
   let i = 0;
   return (
     <div style={{ ...shell, background: bg, color: ink, display: 'flex', alignItems: 'center', justifyContent: 'center', textAlign: 'center' }}>
       <div style={{ padding: '2rem 1.5rem' }}>
+        {eyebrow && (
+          <div style={{ fontFamily: SANS, fontSize: 12, fontWeight: 600, letterSpacing: '0.08em', textTransform: 'uppercase', marginBottom: 10 }}>
+            {eyebrow}
+          </div>
+        )}
         <div style={{ display: 'flex', flexWrap: 'wrap', justifyContent: 'center', gap: '0 10px' }}>
           {words.map((word, w) => (
             <div key={w} style={{ display: 'flex' }}>
@@ -442,12 +495,15 @@ function Scatter({ theme, title, subtitle, paperTexture }: Sub) {
 // Debossed, tone-on-tone type on pastel paper — text and background share
 // a hue, with a soft dual shadow standing in for an actual letterpress
 // impression (no image asset, just text-shadow).
-function Letterpress({ theme, title, subtitle, paperTexture }: Sub) {
+function Letterpress({ theme, eyebrow, title, subtitle, paperTexture }: Sub) {
   const { bg, ink } = LETTERPRESS[theme];
   const emboss = `1px 1px 1px rgba(255,255,255,0.7), -1px -1px 1px rgba(0,0,0,0.18)`;
   return (
     <div style={{ ...shell, background: bg, color: ink, display: 'flex', alignItems: 'center', justifyContent: 'center', textAlign: 'center' }}>
       <div style={{ padding: '2.5rem 1.75rem' }}>
+        {eyebrow && (
+          <div style={{ fontSize: 12, letterSpacing: '0.08em', textTransform: 'uppercase', marginBottom: 10, textShadow: emboss }}>{eyebrow}</div>
+        )}
         <div
           style={{
             fontFamily: DISPLAY,
