@@ -51,7 +51,7 @@ export default async function EventPage({
         title={event.title}
         subtitle={dateLabel}
         photoUrl={event.photo_url}
-        textureUrl={event.texture_url}
+        paperTexture={event.paper_texture}
       />
 
       {event.description && <p style={{ marginTop: 20 }}>{event.description}</p>}

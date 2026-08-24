@@ -56,53 +56,62 @@ interface Props {
   title: string;
   subtitle?: string;
   photoUrl?: string | null;
-  textureUrl?: string | null;
+  paperTexture?: boolean;
 }
 
 // The card "design system": eleven templates pulled from the moodboard,
 // each crossed with five accent colors. No per-card design work, no
 // illustration library — every template is built from type, rules, and
-// simple shapes/SVG. An optional pasted texture image can be laid over
-// any of them (see TextureOverlay below).
-export default function InviteCard({ theme, template, title, subtitle, photoUrl, textureUrl }: Props) {
+// simple shapes/SVG. An optional fixed paper-grain texture can be toggled
+// on over any of them (see TextureOverlay below).
+export default function InviteCard({ theme, template, title, subtitle, photoUrl, paperTexture }: Props) {
   switch (template) {
     case 'poster':
-      return <Poster theme={theme} title={title} subtitle={subtitle} textureUrl={textureUrl} />;
+      return <Poster theme={theme} title={title} subtitle={subtitle} paperTexture={paperTexture} />;
     case 'linework':
-      return <Linework theme={theme} title={title} subtitle={subtitle} textureUrl={textureUrl} />;
+      return <Linework theme={theme} title={title} subtitle={subtitle} paperTexture={paperTexture} />;
     case 'stacked':
-      return <Stacked theme={theme} title={title} subtitle={subtitle} textureUrl={textureUrl} />;
+      return <Stacked theme={theme} title={title} subtitle={subtitle} paperTexture={paperTexture} />;
     case 'photo':
-      return <PhotoLed theme={theme} title={title} subtitle={subtitle} photoUrl={photoUrl} textureUrl={textureUrl} />;
+      return <PhotoLed theme={theme} title={title} subtitle={subtitle} photoUrl={photoUrl} paperTexture={paperTexture} />;
     case 'arch':
-      return <Arch theme={theme} title={title} subtitle={subtitle} textureUrl={textureUrl} />;
+      return <Arch theme={theme} title={title} subtitle={subtitle} paperTexture={paperTexture} />;
     case 'ticket':
-      return <Ticket theme={theme} title={title} subtitle={subtitle} textureUrl={textureUrl} />;
+      return <Ticket theme={theme} title={title} subtitle={subtitle} paperTexture={paperTexture} />;
     case 'script':
-      return <Script theme={theme} title={title} subtitle={subtitle} textureUrl={textureUrl} />;
+      return <Script theme={theme} title={title} subtitle={subtitle} paperTexture={paperTexture} />;
     case 'bubble':
-      return <Bubble theme={theme} title={title} subtitle={subtitle} textureUrl={textureUrl} />;
+      return <Bubble theme={theme} title={title} subtitle={subtitle} paperTexture={paperTexture} />;
     case 'scatter':
-      return <Scatter theme={theme} title={title} subtitle={subtitle} textureUrl={textureUrl} />;
+      return <Scatter theme={theme} title={title} subtitle={subtitle} paperTexture={paperTexture} />;
     case 'letterpress':
-      return <Letterpress theme={theme} title={title} subtitle={subtitle} textureUrl={textureUrl} />;
+      return <Letterpress theme={theme} title={title} subtitle={subtitle} paperTexture={paperTexture} />;
     case 'editorial':
     default:
-      return <Editorial theme={theme} title={title} subtitle={subtitle} textureUrl={textureUrl} />;
+      return <Editorial theme={theme} title={title} subtitle={subtitle} paperTexture={paperTexture} />;
   }
 }
 
-type Sub = { theme: Theme; title: string; subtitle?: string; textureUrl?: string | null };
+type Sub = { theme: Theme; title: string; subtitle?: string; paperTexture?: boolean };
 
-// Optional paper-texture image, blended over whatever's beneath it. Sits
-// last in each template's markup so it layers on top; `multiply` reads
-// as a texture (grain, fibers, a scan) rather than a flat image overlay.
-function TextureOverlay({ url }: { url?: string | null }) {
-  if (!url) return null;
+// The one paper-grain texture the app ships with, used everywhere the
+// toggle is on — not a per-event pasted URL anymore. Swap this constant
+// (or add more and let a template pick one) if you want a different grain.
+const PAPER_TEXTURE_URL = 'https://i.postimg.cc/Jzb7RKck/Texturelabs-Paper-178M.jpg';
+
+// Paper-grain texture, blended over whatever's beneath it when the host
+// has the toggle on. Sits last in each template's markup so it layers on
+// top. `overlay` is CSS's equivalent of Photoshop's Overlay blend mode —
+// it multiplies the texture's darks and screens its lights against
+// what's underneath, rather than uniformly darkening like `multiply`
+// does, which is what keeps a saturated poster/bubble/script card from
+// just going muddy.
+function TextureOverlay({ enabled }: { enabled?: boolean }) {
+  if (!enabled) return null;
   return (
     // eslint-disable-next-line @next/next/no-img-element
     <img
-      src={url}
+      src={PAPER_TEXTURE_URL}
       alt=""
       style={{
         position: 'absolute',
@@ -110,8 +119,7 @@ function TextureOverlay({ url }: { url?: string | null }) {
         width: '100%',
         height: '100%',
         objectFit: 'cover',
-        mixBlendMode: 'multiply',
-        opacity: 0.5,
+        mixBlendMode: 'overlay',
         pointerEvents: 'none',
       }}
     />
@@ -145,7 +153,7 @@ function ArcText({ text, color, id }: { text: string; color: string; id: string 
 }
 
 // Quiet, type-led: cream ground, serif headline, one thin rule.
-function Editorial({ theme, title, subtitle, textureUrl }: Sub) {
+function Editorial({ theme, title, subtitle, paperTexture }: Sub) {
   const accent = ACCENT[theme];
   return (
     <div style={{ ...shell, background: CREAM, color: INK, border: '1px solid rgba(43,40,34,0.1)', display: 'flex', alignItems: 'center', justifyContent: 'center', textAlign: 'center' }}>
@@ -154,14 +162,14 @@ function Editorial({ theme, title, subtitle, textureUrl }: Sub) {
         <div style={{ width: 36, height: 2, background: accent, margin: '14px auto' }} />
         {subtitle && <div style={{ fontSize: 13, letterSpacing: '0.04em', textTransform: 'uppercase', color: MUTED }}>{subtitle}</div>}
       </div>
-      <TextureOverlay url={textureUrl} />
+      <TextureOverlay enabled={paperTexture} />
     </div>
   );
 }
 
 // Bold and saturated: the theme color takes over the whole card, a big
 // condensed uppercase headline, a rotated corner tag like a price sticker.
-function Poster({ theme, title, subtitle, textureUrl }: Sub) {
+function Poster({ theme, title, subtitle, paperTexture }: Sub) {
   const { bg, ink } = POSTER[theme];
   return (
     <div style={{ ...shell, background: bg, color: ink, display: 'flex', flexDirection: 'column', justifyContent: 'flex-end' }}>
@@ -213,14 +221,14 @@ function Poster({ theme, title, subtitle, textureUrl }: Sub) {
           </div>
         )}
       </div>
-      <TextureOverlay url={textureUrl} />
+      <TextureOverlay enabled={paperTexture} />
     </div>
   );
 }
 
 // Hand-drawn feel: cream ground, italic serif headline, a thin wavy line
 // instead of a straight rule, a tiny line-art flourish.
-function Linework({ theme, title, subtitle, textureUrl }: Sub) {
+function Linework({ theme, title, subtitle, paperTexture }: Sub) {
   const accent = ACCENT[theme];
   return (
     <div style={{ ...shell, background: CREAM, color: INK, border: '1px solid rgba(43,40,34,0.1)', display: 'flex', alignItems: 'center', justifyContent: 'center', textAlign: 'center' }}>
@@ -240,7 +248,7 @@ function Linework({ theme, title, subtitle, textureUrl }: Sub) {
         </svg>
         {subtitle && <div style={{ fontSize: 13, letterSpacing: '0.04em', textTransform: 'uppercase', color: MUTED }}>{subtitle}</div>}
       </div>
-      <TextureOverlay url={textureUrl} />
+      <TextureOverlay enabled={paperTexture} />
     </div>
   );
 }
@@ -248,7 +256,7 @@ function Linework({ theme, title, subtitle, textureUrl }: Sub) {
 // Big stacked typographic type — the title set twice, the second copy
 // mirrored and faded like a reflection. Reads well for a punchy invite or
 // a "THANK YOU" card, which is exactly what it's for.
-function Stacked({ theme, title, subtitle, textureUrl }: Sub) {
+function Stacked({ theme, title, subtitle, paperTexture }: Sub) {
   const accent = ACCENT[theme];
   const type: React.CSSProperties = {
     fontFamily: SANS,
@@ -268,7 +276,7 @@ function Stacked({ theme, title, subtitle, textureUrl }: Sub) {
           <div style={{ marginTop: 16, fontSize: 13, letterSpacing: '0.04em', textTransform: 'uppercase', color: MUTED }}>{subtitle}</div>
         )}
       </div>
-      <TextureOverlay url={textureUrl} />
+      <TextureOverlay enabled={paperTexture} />
     </div>
   );
 }
@@ -276,7 +284,7 @@ function Stacked({ theme, title, subtitle, textureUrl }: Sub) {
 // Photo-led: an image with a softly waved bottom edge (pure CSS, no mask
 // asset), then a cream caption panel underneath — the layered postcard
 // look from the save-the-date examples.
-function PhotoLed({ theme, title, subtitle, photoUrl, textureUrl }: Sub & { photoUrl?: string | null }) {
+function PhotoLed({ theme, title, subtitle, photoUrl, paperTexture }: Sub & { photoUrl?: string | null }) {
   const accent = ACCENT[theme];
   return (
     <div style={{ ...shell, background: CREAM, color: INK, border: '1px solid rgba(43,40,34,0.1)' }}>
@@ -295,14 +303,14 @@ function PhotoLed({ theme, title, subtitle, photoUrl, textureUrl }: Sub & { phot
         <div style={{ width: 30, height: 2, background: accent, margin: '12px auto' }} />
         {subtitle && <div style={{ fontSize: 12, letterSpacing: '0.04em', textTransform: 'uppercase', color: MUTED }}>{subtitle}</div>}
       </div>
-      <TextureOverlay url={textureUrl} />
+      <TextureOverlay enabled={paperTexture} />
     </div>
   );
 }
 
 // Headline curved along an arc, cream ground — the "ANDREA AND MARTIN"
 // look. General-purpose: works as well for "SAM'S BIRTHDAY" as a wedding.
-function Arch({ theme, title, subtitle, textureUrl }: Sub) {
+function Arch({ theme, title, subtitle, paperTexture }: Sub) {
   const accent = ACCENT[theme];
   return (
     <div style={{ ...shell, background: CREAM, color: INK, border: '1px solid rgba(43,40,34,0.1)', display: 'flex', alignItems: 'center', justifyContent: 'center', textAlign: 'center' }}>
@@ -311,14 +319,14 @@ function Arch({ theme, title, subtitle, textureUrl }: Sub) {
         <div style={{ width: 30, height: 2, background: accent, margin: '4px auto 12px' }} />
         {subtitle && <div style={{ fontSize: 12, letterSpacing: '0.04em', textTransform: 'uppercase', color: MUTED }}>{subtitle}</div>}
       </div>
-      <TextureOverlay url={textureUrl} />
+      <TextureOverlay enabled={paperTexture} />
     </div>
   );
 }
 
 // Bordered like an event ticket: an inset rule, condensed bold caps
 // headline, subtitle in a pill-shaped outline chip.
-function Ticket({ theme, title, subtitle, textureUrl }: Sub) {
+function Ticket({ theme, title, subtitle, paperTexture }: Sub) {
   const accent = ACCENT[theme];
   return (
     <div style={{ ...shell, background: CREAM, color: INK, border: '1px solid rgba(43,40,34,0.1)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
@@ -342,14 +350,14 @@ function Ticket({ theme, title, subtitle, textureUrl }: Sub) {
           </div>
         )}
       </div>
-      <TextureOverlay url={textureUrl} />
+      <TextureOverlay enabled={paperTexture} />
     </div>
   );
 }
 
 // Cursive headline on a full-bleed saturated color — the "Natalie asked
 // and Adriano said yes!" look.
-function Script({ theme, title, subtitle, textureUrl }: Sub) {
+function Script({ theme, title, subtitle, paperTexture }: Sub) {
   const { bg } = POSTER[theme];
   return (
     <div style={{ ...shell, background: bg, color: LIGHT_INK, display: 'flex', alignItems: 'center', justifyContent: 'center', textAlign: 'center' }}>
@@ -361,14 +369,14 @@ function Script({ theme, title, subtitle, textureUrl }: Sub) {
           </div>
         )}
       </div>
-      <TextureOverlay url={textureUrl} />
+      <TextureOverlay enabled={paperTexture} />
     </div>
   );
 }
 
 // Chunky rounded "bubble" caps on a saturated color — the "FOR EVER" /
 // "SARAH+ETHAN" look.
-function Bubble({ theme, title, subtitle, textureUrl }: Sub) {
+function Bubble({ theme, title, subtitle, paperTexture }: Sub) {
   const { bg, ink } = POSTER[theme];
   return (
     <div style={{ ...shell, background: bg, color: ink, display: 'flex', alignItems: 'center', justifyContent: 'center', textAlign: 'center' }}>
@@ -378,7 +386,7 @@ function Bubble({ theme, title, subtitle, textureUrl }: Sub) {
           <div style={{ marginTop: 12, fontFamily: SCRIPT, fontSize: 18, color: ink }}>{subtitle}</div>
         )}
       </div>
-      <TextureOverlay url={textureUrl} />
+      <TextureOverlay enabled={paperTexture} />
     </div>
   );
 }
@@ -388,7 +396,7 @@ function Bubble({ theme, title, subtitle, textureUrl }: Sub) {
 // function of each letter's position, never Math.random, so server and
 // client render identically (no hydration mismatch) and every reload
 // looks the same rather than jittering around.
-function Scatter({ theme, title, subtitle, textureUrl }: Sub) {
+function Scatter({ theme, title, subtitle, paperTexture }: Sub) {
   const { bg, ink } = POSTER[theme];
   const words = title.split(' ');
   let i = 0;
@@ -426,7 +434,7 @@ function Scatter({ theme, title, subtitle, textureUrl }: Sub) {
           </div>
         )}
       </div>
-      <TextureOverlay url={textureUrl} />
+      <TextureOverlay enabled={paperTexture} />
     </div>
   );
 }
@@ -434,7 +442,7 @@ function Scatter({ theme, title, subtitle, textureUrl }: Sub) {
 // Debossed, tone-on-tone type on pastel paper — text and background share
 // a hue, with a soft dual shadow standing in for an actual letterpress
 // impression (no image asset, just text-shadow).
-function Letterpress({ theme, title, subtitle, textureUrl }: Sub) {
+function Letterpress({ theme, title, subtitle, paperTexture }: Sub) {
   const { bg, ink } = LETTERPRESS[theme];
   const emboss = `1px 1px 1px rgba(255,255,255,0.7), -1px -1px 1px rgba(0,0,0,0.18)`;
   return (
@@ -456,7 +464,7 @@ function Letterpress({ theme, title, subtitle, textureUrl }: Sub) {
           <div style={{ marginTop: 14, fontFamily: SCRIPT, fontSize: 22, textShadow: emboss }}>{subtitle}</div>
         )}
       </div>
-      <TextureOverlay url={textureUrl} />
+      <TextureOverlay enabled={paperTexture} />
     </div>
   );
 }

@@ -37,7 +37,7 @@ export default function CreateEventPage() {
   const [theme, setTheme] = useState<Theme>('teal');
   const [template, setTemplate] = useState<Template>('editorial');
   const [photoUrl, setPhotoUrl] = useState('');
-  const [textureUrl, setTextureUrl] = useState('');
+  const [paperTexture, setPaperTexture] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
 
@@ -61,7 +61,7 @@ export default function CreateEventPage() {
         theme,
         template,
         photo_url: template === 'photo' ? photoUrl : null,
-        texture_url: textureUrl || null,
+        paper_texture: paperTexture,
       }),
     });
     const data = await res.json();
@@ -159,15 +159,17 @@ export default function CreateEventPage() {
         )}
 
         <div className="field-group">
-          <label>Paper texture (optional)</label>
-          <input
-            placeholder="Paste an image link — a scan, a grain, a fibrous paper texture"
-            value={textureUrl}
-            onChange={(e) => setTextureUrl(e.target.value)}
-          />
+          <label style={{ display: 'flex', alignItems: 'center', gap: 8, cursor: 'pointer' }}>
+            <input
+              type="checkbox"
+              checked={paperTexture}
+              onChange={(e) => setPaperTexture(e.target.checked)}
+              style={{ width: 'auto' }}
+            />
+            Paper texture
+          </label>
           <p className="muted" style={{ margin: '2px 0 0', fontSize: 12 }}>
-            Blended lightly over any card style. Host the image somewhere first (Imgur, your own site, etc) and
-            paste the link — there's no upload built in yet.
+            Blends a subtle paper-grain finish over the card. Works with any style above.
           </p>
         </div>
 
@@ -179,7 +181,7 @@ export default function CreateEventPage() {
             title={title || 'Your event title'}
             subtitle={location}
             photoUrl={photoUrl}
-            textureUrl={textureUrl}
+            paperTexture={paperTexture}
           />
         </div>
 

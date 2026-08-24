@@ -40,10 +40,10 @@ export interface EventRecord {
   theme: Theme;
   template: Template;
   photo_url: string | null;
-  // Optional paper-texture overlay image (a URL the host pastes in, same
-  // pattern as photo_url — no upload/storage plumbing needed) blended
-  // over the card at low opacity via CSS mix-blend-mode.
-  texture_url: string | null;
+  // Toggle for the built-in paper-grain texture (a fixed image the app
+  // ships with, not a per-event URL) blended over the card via CSS
+  // mix-blend-mode: overlay.
+  paper_texture: boolean;
   view_token: string;
   edit_token: string;
   created_at: string;

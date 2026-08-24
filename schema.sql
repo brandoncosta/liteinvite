@@ -16,7 +16,7 @@ create table events (
   template text not null default 'editorial',   -- editorial | poster | linework | stacked | photo | arch | ticket | script | bubble | scatter | letterpress
   layout text not null default 'centered',      -- retired, kept for backward compat only
   photo_url text,                               -- optional, used by the "photo" template
-  texture_url text,                             -- optional paper-texture overlay, any template
+  paper_texture boolean not null default false, -- toggle for the built-in paper-grain overlay
   view_token text not null unique default encode(gen_random_bytes(8), 'hex'),
   edit_token text not null unique default encode(gen_random_bytes(12), 'hex'),
   created_at timestamptz not null default now()
