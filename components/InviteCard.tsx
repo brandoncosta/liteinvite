@@ -261,11 +261,34 @@ function Caps({ children, color, size = 11, weight = 600, tracking = '0.18em', s
   );
 }
 
+// How a template speaks in its quieter moments. The closing line has to
+// be set in the same voice as the rest of the card — a cursive flourish
+// under chunky cartoon caps or hand-marker lettering reads like two
+// unrelated cards glued together, so each template names its own voice
+// rather than inheriting one blanket script.
+type Voice = 'script' | 'caps' | 'italic' | 'round' | 'marker';
+
+function closingStyleFor(voice: Voice): React.CSSProperties {
+  switch (voice) {
+    case 'script':
+      return { fontFamily: SCRIPT, fontSize: 18, lineHeight: 1.3 };
+    case 'italic':
+      return { fontFamily: SERIF, fontStyle: 'italic', fontSize: 14, lineHeight: 1.4 };
+    case 'round':
+      return { fontFamily: ROUND, fontSize: 13, letterSpacing: '0.03em', textTransform: 'uppercase', lineHeight: 1.4 };
+    case 'marker':
+      return { fontFamily: MARKER, fontSize: 15, lineHeight: 1.35 };
+    case 'caps':
+    default:
+      return { fontFamily: SANS, fontSize: 10.5, fontWeight: 600, letterSpacing: '0.16em', textTransform: 'uppercase', lineHeight: 1.5 };
+  }
+}
+
 // The layered footer every real invitation has: when, where, and the
 // closing note. Rendering this consistently is most of what separates
 // these cards from a headline floating in whitespace.
-function DetailStack({ copy, color, align = 'center', rule, gap = 3 }: {
-  copy: Copy; color: string; align?: 'center' | 'left'; rule?: boolean; gap?: number;
+function DetailStack({ copy, color, align = 'center', rule, gap = 3, voice = 'caps' }: {
+  copy: Copy; color: string; align?: 'center' | 'left'; rule?: boolean; gap?: number; voice?: Voice;
 }) {
   const { dateLine, timeLine, venue, closing } = copy;
   if (!dateLine && !timeLine && !venue && !closing) return null;
@@ -276,7 +299,7 @@ function DetailStack({ copy, color, align = 'center', rule, gap = 3 }: {
       {timeLine && <Caps color={color} size={10.5} tracking="0.14em">{`at ${timeLine}`}</Caps>}
       {venue && <Caps color={color} size={10.5} weight={700} tracking="0.14em" style={{ marginTop: 4 }}>{venue}</Caps>}
       {closing && (
-        <div style={{ fontFamily: SCRIPT, fontSize: 17, color, opacity: 0.9, marginTop: 8, lineHeight: 1.3 }}>{closing}</div>
+        <div style={{ ...closingStyleFor(voice), color, opacity: 0.9, marginTop: 8 }}>{closing}</div>
       )}
     </div>
   );
@@ -303,14 +326,14 @@ function Letterpress({ palette, copy, paperTexture }: T) {
         </div>
         {copy.hero2 && (
           <>
-            <div style={{ fontFamily: SCRIPT, fontSize: 20, margin: '2px 0', textShadow: emboss }}>and</div>
+            <div style={{ fontFamily: SANS, fontSize: 12, fontWeight: 600, letterSpacing: '0.2em', textTransform: 'uppercase', margin: '8px 0', textShadow: emboss }}>and</div>
             <div style={{ fontFamily: DISPLAY, fontSize: 'clamp(34px, 15cqw, 62px)', lineHeight: 0.95, textTransform: 'uppercase', textShadow: emboss, ...WRAP }}>
               {copy.hero2}
             </div>
           </>
         )}
         <div style={{ marginTop: 22, textShadow: emboss }}>
-          <DetailStack copy={copy} color={paperInk} rule />
+          <DetailStack copy={copy} color={paperInk} rule voice="caps" />
         </div>
       </div>
       <Texture on={paperTexture} />
@@ -369,7 +392,7 @@ function ScriptAnnounce({ palette, copy, paperTexture }: T) {
         {copy.eyebrow && <Caps color={accent} size={11} tracking="0.22em" style={{ marginBottom: 22 }}>{copy.eyebrow}</Caps>}
         <div style={{ fontFamily: SCRIPT, fontSize: 'clamp(34px, 14cqw, 56px)', lineHeight: 1.12, ...WRAP }}>{heroText}</div>
         <div style={{ marginTop: 26 }}>
-          <DetailStack copy={copy} color={accent} />
+          <DetailStack copy={copy} color={accent} voice="script" />
         </div>
       </div>
       <Texture on={paperTexture} />
@@ -401,7 +424,7 @@ function BubbleDoodle({ palette, copy, paperTexture }: T) {
           </>
         )}
         <div style={{ marginTop: 22 }}>
-          <DetailStack copy={copy} color={hero} />
+          <DetailStack copy={copy} color={hero} voice="round" />
         </div>
       </div>
       <Texture on={paperTexture} />
@@ -443,7 +466,7 @@ function MarkerBold({ palette, copy, paperTexture }: T) {
           {copy.hero2 ? `${copy.hero} & ${copy.hero2}` : copy.hero}
         </div>
         <div style={{ marginTop: 24 }}>
-          <DetailStack copy={copy} color={ink} rule />
+          <DetailStack copy={copy} color={ink} rule voice="marker" />
         </div>
       </div>
       <Texture on={paperTexture} />
@@ -463,7 +486,7 @@ function Poster({ palette, copy, paperTexture }: T) {
           {copy.hero2 ? `${copy.hero} & ${copy.hero2}` : copy.hero}
         </div>
         <div style={{ marginTop: 20, paddingTop: 14, borderTop: `1px solid ${ink}44` }}>
-          <DetailStack copy={copy} color={ink} align="left" gap={2} />
+          <DetailStack copy={copy} color={ink} align="left" gap={2} voice="caps" />
         </div>
       </div>
       <Texture on={paperTexture} />
@@ -491,7 +514,7 @@ function Editorial({ palette, copy, paperTexture }: T) {
           </>
         )}
         <div style={{ width: 44, height: 1, background: accent, margin: '22px auto' }} />
-        <DetailStack copy={copy} color={'#7A7568'} />
+        <DetailStack copy={copy} color={'#7A7568'} voice="italic" />
       </div>
       <Texture on={paperTexture} />
     </div>
@@ -510,7 +533,7 @@ function Arch({ palette, copy, paperTexture }: T) {
           <div style={{ fontFamily: DISPLAY, fontSize: 34, textTransform: 'uppercase', marginTop: 6, ...WRAP }}>& {copy.hero2}</div>
         )}
         <div style={{ marginTop: 20 }}>
-          <DetailStack copy={copy} color={paperInk} rule />
+          <DetailStack copy={copy} color={paperInk} rule voice="caps" />
         </div>
       </div>
       <Texture on={paperTexture} />
@@ -543,7 +566,7 @@ function Ticket({ palette, copy, paperTexture }: T) {
           {copy.hero2 ? `${copy.hero} & ${copy.hero2}` : copy.hero}
         </div>
         <div style={{ margin: '18px 0 14px', borderTop: `1px dashed ${accent}88` }} />
-        <DetailStack copy={copy} color={accent} />
+        <DetailStack copy={copy} color={accent} voice="caps" />
       </div>
       <Texture on={paperTexture} />
     </div>
@@ -572,7 +595,7 @@ function PhotoLed({ palette, copy, paperTexture, photoUrl }: T & { photoUrl?: st
           {copy.hero2 ? `${copy.hero} & ${copy.hero2}` : copy.hero}
         </div>
         <div style={{ width: 34, height: 1, background: accent, margin: '14px auto' }} />
-        <DetailStack copy={copy} color={'#7A7568'} />
+        <DetailStack copy={copy} color={'#7A7568'} voice="italic" />
       </div>
       <Texture on={paperTexture} />
     </div>
