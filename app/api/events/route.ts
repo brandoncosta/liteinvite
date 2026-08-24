@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { supabaseServer } from '@/lib/supabase';
 import { absoluteUrl, renderEmailHtml } from '@/lib/email';
+import { destinationFor, geocode } from '@/lib/maps';
 import { Resend } from 'resend';
 
 const resend = new Resend(process.env.RESEND_API_KEY);
@@ -17,9 +18,12 @@ export async function POST(req: NextRequest) {
     theme,
     template,
     purpose,
+    custom_eyebrow,
     custom_headline,
     partner1,
     partner2,
+    honoree,
+    closing_line,
     photo_url,
     paper_texture,
   } = body;
@@ -27,6 +31,12 @@ export async function POST(req: NextRequest) {
   if (!title || !event_date) {
     return NextResponse.json({ error: 'Title and date are required' }, { status: 400 });
   }
+
+  // Resolve the venue to coordinates once, here, so the invite page can
+  // embed a map without geocoding on every view. Best-effort: if this
+  // fails the page just falls back to the directions link.
+  const destination = destinationFor(location || '', map_query);
+  const point = destination ? await geocode(destination) : null;
 
   const supabase = supabaseServer();
   const { data, error } = await supabase
@@ -36,14 +46,19 @@ export async function POST(req: NextRequest) {
       description: description || null,
       location: location || null,
       map_query: map_query || null,
+      map_lat: point?.lat ?? null,
+      map_lng: point?.lng ?? null,
       host_email: host_email || null,
       event_date,
-      theme: theme || 'sage',
-      template: template || 'editorial',
+      theme: theme || 'lime',
+      template: template || 'letterpress',
       purpose: purpose || 'invite',
+      custom_eyebrow: custom_eyebrow || null,
       custom_headline: custom_headline || null,
       partner1: partner1 || null,
       partner2: partner2 || null,
+      honoree: honoree || null,
+      closing_line: closing_line || null,
       photo_url: photo_url || null,
       paper_texture: Boolean(paper_texture),
     })

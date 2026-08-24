@@ -5,6 +5,17 @@ import { Resend } from 'resend';
 
 const resend = new Resend(process.env.RESEND_API_KEY);
 
+// Resend accepts up to 100 emails per batch request, and allows 10
+// requests per second. One batch per 100 guests, with a pause between
+// batches, keeps even a very long list comfortably inside both limits.
+const BATCH_SIZE = 100;
+const BATCH_PAUSE_MS = 400;
+const sleep = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
+
+// A big list can take a few seconds of wall-clock time to push through;
+// the default serverless timeout is short enough to cut that off midway.
+export const maxDuration = 60;
+
 // Sends the actual personalized invite email to each guest on the list —
 // this is the step that was missing before: previously the host only ever
 // got one shareable link and had to send it themselves. Each guest gets
@@ -59,35 +70,51 @@ export async function POST(req: NextRequest) {
       minute: '2-digit',
     });
 
-    const results = await Promise.allSettled(
-      guests.map(async (g) => {
-        const inviteUrl = absoluteUrl(`/e/${event.view_token}?g=${g.invite_token}`);
-        // The Resend SDK resolves with { data, error } for most API-level
-        // failures (bad/unverified sender, blocked recipient) rather than
-        // throwing — only network/auth failures throw. Check both, or a
-        // rejected send would silently count as "sent".
-        const { error: sendError } = await resend.emails.send({
-          from: process.env.EMAIL_FROM || 'invites@resend.dev',
-          to: g.email,
-          subject: `You're invited: ${event.title}`,
-          text: `Hi ${g.name},\n\nYou're invited to ${event.title} on ${dateLabel}${event.location ? ` at ${event.location}` : ''}.\n\nRSVP here: ${inviteUrl}`,
-          html: renderEmailHtml({
-            heading: `You're invited: ${event.title}`,
-            bodyLines: [
-              `Hi ${g.name},`,
-              `${dateLabel}${event.location ? ` · ${event.location}` : ''}`,
-            ],
-            primary: { label: 'RSVP', url: inviteUrl },
-          }),
-        });
-        if (sendError) throw new Error(sendError.message || 'Resend rejected the send');
-        return g.id;
-      })
-    );
+    // Build one payload per guest, then hand them to Resend's *batch*
+    // endpoint. Sending them individually (one API call each) is what
+    // caused "Sent 0, 30 failed — you can only make 10 requests per
+    // second": 30 parallel sends blew straight through Resend's rate
+    // limit. batch.send delivers up to 100 emails in a single request, so
+    // a 30-guest list is now one call instead of thirty.
+    const payloads = guests.map((g) => {
+      const inviteUrl = absoluteUrl(`/e/${event.view_token}?g=${g.invite_token}`);
+      return {
+        from: process.env.EMAIL_FROM || 'invites@resend.dev',
+        to: g.email,
+        subject: `You're invited: ${event.title}`,
+        text: `Hi ${g.name},\n\nYou're invited to ${event.title} on ${dateLabel}${event.location ? ` at ${event.location}` : ''}.\n\nRSVP here: ${inviteUrl}`,
+        html: renderEmailHtml({
+          heading: `You're invited: ${event.title}`,
+          bodyLines: [`Hi ${g.name},`, `${dateLabel}${event.location ? ` · ${event.location}` : ''}`],
+          primary: { label: 'RSVP', url: inviteUrl },
+        }),
+      };
+    });
 
-    const sentIds = results
-      .map((r, i) => (r.status === 'fulfilled' ? guests[i].id : null))
-      .filter((id): id is string => id !== null);
+    const sentIds: string[] = [];
+    const failures: string[] = [];
+
+    // 100 is Resend's per-batch ceiling. Lists longer than that get split,
+    // with a short pause between batches so even many batches stay under
+    // the 10-requests-per-second limit.
+    for (let start = 0; start < payloads.length; start += BATCH_SIZE) {
+      const slice = payloads.slice(start, start + BATCH_SIZE);
+      const sliceGuests = guests.slice(start, start + BATCH_SIZE);
+      if (start > 0) await sleep(BATCH_PAUSE_MS);
+
+      try {
+        // Like emails.send, batch.send resolves with { data, error } for
+        // API-level failures rather than throwing.
+        const { error: batchError } = await resend.batch.send(slice);
+        if (batchError) {
+          failures.push(batchError.message || 'Resend rejected the batch');
+          continue;
+        }
+        sentIds.push(...sliceGuests.map((g) => g.id));
+      } catch (err) {
+        failures.push(err instanceof Error ? err.message : 'Batch send failed');
+      }
+    }
 
     if (sentIds.length > 0) {
       const { error: updateError } = await supabase
@@ -104,15 +131,12 @@ export async function POST(req: NextRequest) {
       }
     }
 
-    const failedResults = results.filter((r): r is PromiseRejectedResult => r.status === 'rejected');
-    const firstError = failedResults[0]?.reason instanceof Error ? failedResults[0].reason.message : undefined;
-
     return NextResponse.json({
       sent: sentIds.length,
-      failed: failedResults.length,
+      failed: guests.length - sentIds.length,
       // Surface *why* sends failed instead of a bare count — this is what
       // was missing before, so "it doesn't work" had no diagnosis.
-      error: failedResults.length > 0 ? firstError || 'One or more sends failed' : undefined,
+      error: failures.length > 0 ? failures[0] : undefined,
     });
   } catch (err) {
     return NextResponse.json(

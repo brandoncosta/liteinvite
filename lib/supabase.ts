@@ -30,37 +30,48 @@ export function supabaseServer() {
   );
 }
 
-// Eight accent colors pulled straight from the moodboard photos (the sage
-// and coral papers, the lavender wedding suite, the mustard RSVP card, the
-// bold red suite) plus two we felt were missing from the set: a true
-// saturated red and a near-black "ink" neutral for a more sophisticated
-// card. Renamed from the old teal/coral/purple/pink/amber set as part of
-// the ground-up redesign — existing rows with an old theme value just fall
-// back to `sage` in the card component rather than erroring.
-export type Theme = 'sage' | 'coral' | 'lavender' | 'blush' | 'mustard' | 'red' | 'olive' | 'ink';
-// The card's overall visual style. Ten templates built from scratch to sit
-// much closer to the moodboard than the original set — several are
-// name-forward (partner1/partner2) rather than title-forward. Old rows
-// carrying a retired template name (editorial/poster/linework/stacked/
-// photo/arch/ticket/script/bubble/scatter/letterpress from the previous
-// version) fall back to `editorial` in the card component.
+// Fourteen palettes pulled from the moodboard photos — the lime and sage
+// letterpress papers, the coral and terracotta suite, the lavender and
+// grape wedding cards, the mustard RSVP card, the bright orange
+// hand-lettered invite, the bold tomato-red suite, the blush and hot-pink
+// cards — plus a few we felt were missing to round the set out: a deep
+// forest, a warm butter, a near-black ink and a plain cream neutral.
+// Every palette carries its own *text* colors, not just a background.
+// Existing rows with a retired theme value fall back to `lime`.
+export type Theme =
+  | 'lime' | 'sage' | 'forest' | 'olive'
+  | 'coral' | 'terracotta' | 'orange' | 'tomato'
+  | 'blush' | 'hotpink' | 'lavender' | 'grape'
+  | 'mustard' | 'butter' | 'ink' | 'cream';
+// The card's overall visual style. Ten templates rebuilt from scratch, each
+// modelled on a specific moodboard card and laying out a full typographic
+// detail stack (eyebrow → hero → date/time → venue → closing note) rather
+// than a headline with one caption line under it. Old rows carrying a
+// retired template name fall back to `editorial` in the card component.
 export type Template =
-  | 'editorial'      // quiet serif type, one thin rule
-  | 'poster'         // bold saturated color block, huge condensed headline
-  | 'letterpress-arch' // tone-on-tone deboss, eyebrow curved above the headline
-  | 'names-grid'     // "THE WEDDING OF / PAUL + JARED" — big names, compact detail block
-  | 'bubble-doodle'  // chunky rounded caps + hand-drawn flower doodles
-  | 'cursive-announce' // small tracked eyebrow, big cursive script headline on cream
-  | 'bold-marker'    // saturated color, thick uneven marker-pen lettering
-  | 'ticket'         // bordered ticket/badge with a pill detail
-  | 'scatter'        // jumbled, playfully rotated letters
-  | 'photo';         // photo up top, caption below
-// What the card is for — drives the fixed headline every template shows
-// ("You're Invited" / "Save the Date" / "Thank You!"), so the host is
-// picking a preset rather than composing card copy themselves. `custom`
-// lets the host type their own headline for anything that doesn't fit
-// those three (a shower, a retirement party, "It's a Girl!", etc).
-export type Purpose = 'invite' | 'save-the-date' | 'thank-you' | 'custom';
+  | 'letterpress'   // arched eyebrow over huge debossed display caps, tone-on-tone
+  | 'stacked-names' // "THE WEDDING OF / PAUL keith + JARED beck" + flanked date block
+  | 'script-announce' // tracked eyebrow, big cursive line, small-caps detail stack
+  | 'bubble-doodle' // chunky rounded caps + hand-drawn flower doodles on cream
+  | 'marker-bold'   // saturated ground, thick uneven marker caps at mixed sizes
+  | 'poster'        // huge condensed sans on a saturated block
+  | 'editorial'     // quiet serif, hairline rules, cream
+  | 'arch'          // display headline curved along an arc
+  | 'ticket'        // bordered badge with a perforated-edge detail
+  | 'photo';        // photo up top, detail stack below
+// What the card is for. Drives the fixed copy each template shows and,
+// importantly, *which extra fields the form asks for* — a wedding or
+// save-the-date collects two names, a birthday collects the guest of
+// honor, and `custom` lets the host write both lines themselves.
+export type Purpose =
+  | 'invite'
+  | 'wedding'
+  | 'save-the-date'
+  | 'engagement'
+  | 'birthday'
+  | 'shower'
+  | 'thank-you'
+  | 'custom';
 export type Layout = 'centered' | 'left' | 'accent' | 'photo';
 export type RsvpStatus = 'yes' | 'no' | 'maybe';
 
@@ -77,13 +88,18 @@ export interface EventRecord {
   theme: Theme;
   template: Template;
   purpose: Purpose;
-  // The host's own headline text, used only when purpose === 'custom'.
+  // The host's own eyebrow + headline text, used only when purpose === 'custom'.
+  custom_eyebrow: string | null;
   custom_headline: string | null;
-  // Optional name-forward fields — fills in name-driven templates like
-  // "names-grid" and "bubble-doodle" (the "PAUL + JARED" / "STEVIE JONES
-  // & HAYDEN SMITH" look) instead of the generic event title.
+  // Collected when the purpose is a two-name occasion (wedding, save-the-date,
+  // engagement) — drives the "PAUL + JARED" hero treatment on every template.
   partner1: string | null;
   partner2: string | null;
+  // Collected when the purpose centers on one person (birthday, shower).
+  honoree: string | null;
+  // The closing line printed at the foot of the card ("Dancing & merriment
+  // to follow", "Cocktail attire"), straight out of the moodboard cards.
+  closing_line: string | null;
   photo_url: string | null;
   // Toggle for the built-in paper-grain texture (a fixed image the app
   // ships with, not a per-event URL) blended over the card via CSS

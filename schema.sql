@@ -11,14 +11,19 @@ create table events (
   description text,
   location text,
   map_query text,                                -- optional precise address/coords for directions/embedded map
+  map_lat double precision,                      -- cached geocode of the venue for the embedded map
+  map_lng double precision,
   host_email text,
   event_date timestamptz not null,
-  theme text not null default 'sage',            -- sage | coral | lavender | blush | mustard | red | olive | ink
-  template text not null default 'editorial',    -- editorial | poster | letterpress-arch | names-grid | bubble-doodle | cursive-announce | bold-marker | ticket | scatter | photo
-  purpose text not null default 'invite',        -- invite | save-the-date | thank-you | custom — drives the fixed headline
+  theme text not null default 'lime',            -- lime|sage|forest|olive|coral|terracotta|orange|tomato|blush|hotpink|lavender|grape|mustard|butter|ink|cream
+  template text not null default 'editorial',    -- letterpress | stacked-names | script-announce | bubble-doodle | marker-bold | poster | editorial | arch | ticket | photo
+  purpose text not null default 'invite',        -- invite|wedding|save-the-date|engagement|birthday|shower|thank-you|custom
+  custom_eyebrow text,                           -- host's own eyebrow line, used only when purpose = 'custom'
   custom_headline text,                          -- host's own headline text, used only when purpose = 'custom'
-  partner1 text,                                 -- optional name-forward fields for wedding/engagement-style templates
+  partner1 text,                                 -- two-name occasions: wedding / save-the-date / engagement
   partner2 text,
+  honoree text,                                  -- one-person occasions: birthday / shower
+  closing_line text,                             -- footer line, e.g. "Dancing & merriment to follow"
   layout text not null default 'centered',      -- retired, kept for backward compat only
   photo_url text,                               -- optional, used by the "photo" template
   paper_texture boolean not null default false, -- toggle for the built-in paper-grain overlay

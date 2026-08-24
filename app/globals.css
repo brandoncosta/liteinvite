@@ -152,3 +152,34 @@ button:disabled {
   padding: 3px 9px;
   border-radius: 999px;
 }
+
+/* ---- Create-event: form and live preview side by side ----
+   The preview column sticks in place while the form scrolls, so the card
+   stays visible while you change things instead of having to scroll back
+   up to it. Below 900px the two columns collapse into the original
+   single stacked column — the phone layout is unchanged. */
+.builder {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 24px;
+  align-items: start;
+}
+
+@media (min-width: 900px) {
+  .builder {
+    grid-template-columns: minmax(0, 1fr) minmax(320px, 420px);
+    gap: 40px;
+  }
+  .builder-preview {
+    position: sticky;
+    top: 32px;
+  }
+}
+
+/* The page is normally a narrow reading column; the builder needs the
+   full width of the window to fit two columns. */
+.builder-page {
+  max-width: 1180px;
+  margin: 0 auto;
+  padding: 3rem 1.25rem;
+}
